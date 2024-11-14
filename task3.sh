@@ -12,16 +12,28 @@
 #To add folders and groups to relevant folders
 makeFolders(){ 
 	mkdir main
-		for i in {1,2}; do
-			echo "Current number is $i"
-			name="main/folder0$i"
-			mkdir "$name"
-			
-			groupadd "group0$i"
-			commandGroup="-R -m d:g:group0$i:r $name"
-			setfacl $commandGroup 
 
-		done
+	for i in {1,2}; do
+		echo "Current number is $i"
+		name="main/folder0$i"
+		mkdir "$name"
+		
+		groupadd "group0$i"
+		
+		#Set default
+		commandGroup="-m d:g:group0$i:rwx $name"
+		setfacl $commandGroup 
+		#Set group privilege 
+		commandGroup="-m g:group0$i:rwx $name"
+		setfacl $commandGroup 
+		#Set default in main
+		commandGroup="-m d:g:group0$i:rwx main"
+		setfacl $commandGroup
+		#Set privilege in main
+		commandGroup="-m g:group0$i:rwx main"
+		setfacl $commandGroup
+		
+	done
 	touch main/check.sh
 	echo "The folder structure has been made"
 }
@@ -54,8 +66,8 @@ addUsers(){
 		useradd $username
 		
 		#Privilege for Main
-		#command="-m d:u:$username:rx main/$1"
-		#setfacl $command
+		command="-m d:u:$username:rx main/$1"
+		setfacl $command
 		
 		#Add user to group
 		command="-aG group0$currentFolderNumber $username"
@@ -64,15 +76,18 @@ addUsers(){
 		#Make userFolder
 		userFolder="main/$1/userfolder0$startPoint"
 		mkdir $userFolder
-		#Privilege for folder
+		#Default Privilege for folder
 		command="-R -m d:u:$username:rwx $userFolder"
+		setfacl $command
+		#User Privilege for folder
+		command="-R -m u:$username:rwx $userFolder"
 		setfacl $command
 		#Make file to check privilege
 		userFile="$userFolder/user$startPoint.sh"
 		touch $userFile
 		
 		#Increment
-		$startPoint = $((startPoint++))
+		((startPoint+=1))
 		echo $startPoint
 	done
 
